@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Azure.Functions.Worker.Context.Features
 {
-    internal interface IModelBindingFeature
+    public interface IModelBindingFeature
     {
         object?[]? InputArguments { get; }
 
