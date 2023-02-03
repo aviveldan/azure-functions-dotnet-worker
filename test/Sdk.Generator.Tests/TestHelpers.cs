@@ -44,9 +44,13 @@ namespace Microsoft.Azure.Functions.SdkGeneratorTests
                 test.TestState.GeneratedSources.Add((typeof(TSourceGenerator), expectedFileName, SourceText.From(expectedOutputSource, Encoding.UTF8)));
             }
 
-            // Enable "FunctionsEnablePlaceholder" MSBuild property for testing
+            // Enable "FunctionsEnablePlaceholder" & FunctionsMetadataSourceGen_Enabled MSBuild properties for tests
             // Same as doing <FunctionsEnablePlaceholder>True</FunctionsEnablePlaceholder> in the project file.
-            string config = $"is_global = true{Environment.NewLine}build_property.FunctionsEnablePlaceholder = {true}";
+            //            var config = $"is_global = true{Environment.NewLine}build_property.FunctionsEnablePlaceholder = {true}{Environment.NewLine}build_property.FunctionsMetadataSourceGen_Enabled = {true}";
+            var config = $@"is_global = true
+                            build_property.FunctionsEnablePlaceholder = {true}
+                            build_property.FunctionsMetadataSourceGen_Enabled = {true}";
+
             test.TestState.AnalyzerConfigFiles.Add(("/.globalconfig", config));
 
             foreach (var item in extensionAssemblyReferences)
@@ -61,7 +65,6 @@ namespace Microsoft.Azure.Functions.SdkGeneratorTests
 
             return test.RunAsync();
         }
-
     }
 
     // Mostly copy/pasted from the Microsoft Source Generators testing documentation
