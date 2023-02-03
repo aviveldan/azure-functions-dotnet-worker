@@ -46,7 +46,6 @@ namespace Microsoft.Azure.Functions.SdkGeneratorTests
 
             // Enable "FunctionsEnablePlaceholder" & FunctionsMetadataSourceGen_Enabled MSBuild properties for tests
             // Same as doing <FunctionsEnablePlaceholder>True</FunctionsEnablePlaceholder> in the project file.
-            //            var config = $"is_global = true{Environment.NewLine}build_property.FunctionsEnablePlaceholder = {true}{Environment.NewLine}build_property.FunctionsMetadataSourceGen_Enabled = {true}";
             var config = $@"is_global = true
                             build_property.FunctionsEnablePlaceholder = {true}
                             build_property.FunctionsMetadataSourceGen_Enabled = {true}";
