@@ -98,7 +98,7 @@ void AzureFunctionsRpc::NativeHostMessageHandler::HandleMessage(ByteBuffer *rece
                     application_->ExecuteApplication(exePath);
                 }
 
-                std::this_thread::sleep_for(std::chrono::milliseconds(200));
+                //std::this_thread::sleep_for(std::chrono::milliseconds(200));
                 // Forward to env reload request to worker.
                 FUNC_LOG_INFO("Forwarding env reload req to worker via inbound channel1.");
                 funcgrpc::MessageChannel::GetInstance().GetInboundChannel().push(*receivedMessageBb);
