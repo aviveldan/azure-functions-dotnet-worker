@@ -21,7 +21,13 @@ namespace Microsoft.Azure.Functions.Worker.Definition
             Name = loadRequest.Metadata.Name;
             Id = loadRequest.FunctionId;
 
-            string? scriptRoot = Environment.GetEnvironmentVariable("FUNCTIONS_WORKER_DIRECTORY");
+            var scriptRoot = Environment.GetEnvironmentVariable("FUNCTIONS_CODE_DIRECTORY");
+            // Below fallback logic can be eventually removed once the host changes setting this env variable is out.
+            if (string.IsNullOrWhiteSpace(scriptRoot))
+            {
+                scriptRoot = Environment.GetEnvironmentVariable("FUNCTIONS_WORKER_DIRECTORY");
+            }
+
             if (string.IsNullOrWhiteSpace(scriptRoot))
             {
                 throw new InvalidOperationException("The 'FUNCTIONS_WORKER_DIRECTORY' environment variable value is not defined. This is a required environment variable that is automatically set by the Azure Functions runtime.");

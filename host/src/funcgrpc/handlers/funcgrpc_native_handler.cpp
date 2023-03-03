@@ -6,6 +6,8 @@
 #include "../func_log.h"
 #include "../func_perf_marker.h"
 #include "../funcgrpc_worker_config_handle.h"
+#include <chrono>
+#include <thread>
 
 using namespace AzureFunctionsRpc;
 using AzureFunctionsRpcMessages::FunctionEnvironmentReloadResponse;
@@ -96,15 +98,11 @@ void AzureFunctionsRpc::NativeHostMessageHandler::HandleMessage(ByteBuffer *rece
                     application_->ExecuteApplication(exePath);
                 }
 
-                StreamingMessage streamingMsg;
-                streamingMsg.mutable_function_environment_reload_response()->mutable_result()->set_status(
-                    AzureFunctionsRpcMessages::StatusResult::Success);
-
-                auto uPtrBb = funcgrpc::SerializeToByteBuffer(&streamingMsg);
-                auto byteBuffer = uPtrBb.get();
-
-                FUNC_LOG_DEBUG("Pushing response to outbound channel.contentCase: {}", streamingMsg.content_case());
-                funcgrpc::MessageChannel::GetInstance().GetOutboundChannel().push(*byteBuffer);
+                std::this_thread::sleep_for(std::chrono::milliseconds(200));
+                // Forward to env reload request to worker.
+                FUNC_LOG_INFO("Forwarding env reload req to worker via inbound channel1.");
+                funcgrpc::MessageChannel::GetInstance().GetInboundChannel().push(*receivedMessageBb);
+                FUNC_LOG_INFO("Pushed env reload req to inbound channel2.");
                 specializationRequestReceived = true;
             }
             catch (const std::exception &ex)

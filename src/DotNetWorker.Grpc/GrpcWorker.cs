@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
@@ -56,7 +57,7 @@ namespace Microsoft.Azure.Functions.Worker
             _invocationFeaturesFactory = invocationFeaturesFactory ?? throw new ArgumentNullException(nameof(invocationFeaturesFactory));
             _outputBindingsInfoProvider = outputBindingsInfoProvider ?? throw new ArgumentNullException(nameof(outputBindingsInfoProvider));
             _methodInfoLocator = methodInfoLocator ?? throw new ArgumentNullException(nameof(methodInfoLocator));
-            
+
             _workerOptions = workerOptions?.Value ?? throw new ArgumentNullException(nameof(workerOptions));
             _serializer = workerOptions.Value.Serializer ?? throw new InvalidOperationException(nameof(workerOptions.Value.Serializer));
             _inputConversionFeatureProvider = inputConversionFeatureProvider ?? throw new ArgumentNullException(nameof(inputConversionFeatureProvider));
@@ -115,11 +116,7 @@ namespace Microsoft.Azure.Functions.Worker
                     break;
 
                 case MsgType.FunctionEnvironmentReloadRequest:
-                    // No-op for now, but return a response.
-                    responseMessage.FunctionEnvironmentReloadResponse = new FunctionEnvironmentReloadResponse
-                    {
-                        Result = new StatusResult { Status = StatusResult.Types.Status.Success }
-                    };
+                    responseMessage.FunctionEnvironmentReloadResponse = EnvReloadRequestHandler(request.FunctionEnvironmentReloadRequest, _workerOptions);
                     break;
 
                 case MsgType.InvocationCancel:
@@ -144,40 +141,65 @@ namespace Microsoft.Azure.Functions.Worker
             _invocationHandler.TryCancel(request.InvocationId);
         }
 
+        internal static FunctionEnvironmentReloadResponse EnvReloadRequestHandler(FunctionEnvironmentReloadRequest request, WorkerOptions workerOptions)
+        {
+            var envReloadResponse = new FunctionEnvironmentReloadResponse
+            {
+                Result = new StatusResult { Status = StatusResult.Types.Status.Success },
+                WorkerMetadata = GetWorkerMetadata()
+            };
+            envReloadResponse.Capabilities.Add(GetWorkerCapabilities(workerOptions));
+
+            return envReloadResponse;
+        }
+
         internal static WorkerInitResponse WorkerInitRequestHandler(WorkerInitRequest request, WorkerOptions workerOptions)
         {
-            var frameworkDescriptionRegex = new Regex(@"^(\D*)+(?!\S)");
-
             var response = new WorkerInitResponse
             {
                 Result = new StatusResult { Status = StatusResult.Types.Status.Success },
                 WorkerVersion = WorkerInformation.Instance.WorkerVersion,
-                WorkerMetadata = new WorkerMetadata
-                {
-                    RuntimeName = frameworkDescriptionRegex.Match(RuntimeInformation.FrameworkDescription).Value ?? RuntimeInformation.FrameworkDescription,
-                    RuntimeVersion = Environment.Version.ToString(),
-                    WorkerVersion = WorkerInformation.Instance.WorkerVersion,
-                    WorkerBitness = RuntimeInformation.ProcessArchitecture.ToString()
-                }
+                WorkerMetadata = GetWorkerMetadata()
             };
+            response.Capabilities.Add(GetWorkerCapabilities(workerOptions));
 
-            response.WorkerMetadata.CustomProperties.Add("Worker.Grpc.Version", typeof(GrpcWorker).Assembly.GetName().Version?.ToString());
+            return response;
+        }
 
+        private static WorkerMetadata GetWorkerMetadata()
+        {
+            var frameworkDescriptionRegex = new Regex(@"^(\D*)+(?!\S)");
+
+            var workerMetadata = new WorkerMetadata
+            {
+                RuntimeName = frameworkDescriptionRegex.Match(RuntimeInformation.FrameworkDescription).Value ?? RuntimeInformation.FrameworkDescription,
+                RuntimeVersion = Environment.Version.ToString(),
+                WorkerVersion = WorkerInformation.Instance.WorkerVersion,
+                WorkerBitness = RuntimeInformation.ProcessArchitecture.ToString()
+            };
+            workerMetadata.CustomProperties.Add("Worker.Grpc.Version", typeof(GrpcWorker).Assembly.GetName().Version?.ToString());
+
+            return workerMetadata;
+        }
+
+        private static IDictionary<string, string> GetWorkerCapabilities(WorkerOptions workerOptions)
+        {
+            var capabilities = new Dictionary<string, string>();
             // Add additional capabilities defined by WorkerOptions
             foreach ((string key, string value) in workerOptions.Capabilities)
             {
-                response.Capabilities[key] = value;
+                capabilities[key] = value;
             }
 
             // Add required capabilities; these cannot be modified and will override anything from WorkerOptions
-            response.Capabilities["RpcHttpBodyOnly"] = bool.TrueString;
-            response.Capabilities["RawHttpBodyBytes"] = bool.TrueString;
-            response.Capabilities["RpcHttpTriggerMetadataRemoved"] = bool.TrueString;
-            response.Capabilities["UseNullableValueDictionaryForHttp"] = bool.TrueString;
-            response.Capabilities["TypedDataCollection"] = bool.TrueString;
-            response.Capabilities["WorkerStatus"] = bool.TrueString;
+            capabilities["RpcHttpBodyOnly"] = bool.TrueString;
+            capabilities["RawHttpBodyBytes"] = bool.TrueString;
+            capabilities["RpcHttpTriggerMetadataRemoved"] = bool.TrueString;
+            capabilities["UseNullableValueDictionaryForHttp"] = bool.TrueString;
+            capabilities["TypedDataCollection"] = bool.TrueString;
+            capabilities["WorkerStatus"] = bool.TrueString;
 
-            return response;
+            return capabilities;
         }
 
         private async Task<FunctionMetadataResponse> GetFunctionMetadataAsync(string functionAppDirectory)
