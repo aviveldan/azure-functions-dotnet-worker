@@ -45,7 +45,11 @@ steps:
     workingDirectory: $(Build.SourcesDirectory)/host/src/ManagedLoader
     displayName: List Build.SourcesDirectory content
 
-  - template: ../build/install-dotnet.yml
+  - pwsh: |
+    Invoke-WebRequest 'https://raw.githubusercontent.com/dotnet/cli/master/scripts/obtain/dotnet-install.ps1' -OutFile 'dotnet-install.ps1'
+    ./dotnet-install.ps1 -InstallDir "$env:ProgramFiles/dotnet" -Version "6.0.100" -Channel 'release'
+    dotnet --info
+    displayName: 'Install .Net'
 
   # Publish managed apploader binaries to same location(under loader dir) where we produced native component binaries.
   - task: DotNetCoreCLI@2
