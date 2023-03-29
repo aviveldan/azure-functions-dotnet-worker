@@ -58,6 +58,11 @@ steps:
       arguments: '-c Release -o $(Build.SourcesDirectory)/host/build/win-x64/loader'
       workingDirectory: $(Build.SourcesDirectory)/host/src/ManagedLoader
 
+    # Will remove after validating builds are working.
+  - script: dir
+    workingDirectory: $(Build.SourcesDirectory)/host/build/win-x64/loader
+    displayName: List loader content
+
   - task: NuGetCommand@2
     displayName: "Nuget pack"
     inputs:
