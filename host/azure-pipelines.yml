@@ -45,6 +45,8 @@ steps:
     workingDirectory: $(Build.SourcesDirectory)/host/src/ManagedLoader
     displayName: List Build.SourcesDirectory content
 
+  - template: ../build/install-dotnet.yml
+
   # Publish managed apploader binaries to same location(under loader dir) where we produced native component binaries.
   - task: DotNetCoreCLI@2
     displayName: 'Publish Managed AppLoader binaries'
