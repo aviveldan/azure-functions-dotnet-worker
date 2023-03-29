@@ -54,8 +54,9 @@ steps:
     displayName: 'Publish Managed AppLoader binaries'
     inputs:
       command: 'publish'
+      publishWebProjects: false
       workingDirectory: $(Build.SourcesDirectory)/host/src/ManagedLoader
-      projects: 'FunctionsNetHost.ManagedLoader.csproj'
+      projects: 'FunctionsNetHost.ManagedLoader.sln'
 
   - task: NuGetCommand@2
     displayName: "Nuget pack"
